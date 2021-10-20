@@ -1,15 +1,17 @@
 package com.example.demojackson.ex;
 
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -108,6 +110,58 @@ public class Ex1 {
         @JsonValue
         public String getName() {
             return name;
+        }
+    }
+
+    @Test
+    void whenSerializingUsingJsonRootName_thenCorrect() throws Exception {
+        JsonRootNameObject o = new JsonRootNameObject();
+        o.id = 123;
+        o.name = "name";
+
+        String result = objectMapper.writeValueAsString(o);
+
+        log.info(result);
+        assertThat(result).isEqualTo("{\"id\":123,\"name\":\"name\"}");
+    }
+
+    @JsonRootName("user")
+    public static class JsonRootNameObject {
+        public Integer id;
+        public String name;
+    }
+
+    @Test
+    void whenSerializingUsingJsonSerialize_thenCorrect() throws Exception {
+        JsonSerializeObject o = new JsonSerializeObject();
+        o.id = 123;
+        o.name = "name";
+
+        String result = objectMapper.writeValueAsString(o);
+
+        log.info(result);
+        assertThat(result).isEqualTo("{\"id\":123,\"name\":\"name\"}");
+    }
+
+    @JsonSerialize(using = ObjectSerializer.class)
+    public static class JsonSerializeObject {
+        public Integer id;
+        public String name;
+    }
+
+    public static class ObjectSerializer extends StdSerializer<JsonSerializeObject> {
+        public ObjectSerializer() {
+            super(JsonSerializeObject.class);
+        }
+
+        @Override
+        public void serialize(JsonSerializeObject value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+            gen.writeStartObject();
+
+            gen.writeNumberField("id", value.id);
+            gen.writeStringField("name", value.name);
+
+            gen.writeEndObject();
         }
     }
 }
