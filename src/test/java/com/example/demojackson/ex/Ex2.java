@@ -30,7 +30,7 @@ public class Ex2 {
     public static class SinglePropertyBeanWithCreator {
         public String name;
 
-        @JsonCreator
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public SinglePropertyBeanWithCreator(@JsonProperty("theName") String name) {
             this.name = name;
         }
@@ -51,7 +51,7 @@ public class Ex2 {
         public int id;
         public String name;
 
-        @JsonCreator
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public MultiplePropertyBeanWithCreator(
                 @JsonProperty("id") int id,
                 @JsonProperty("theName") String name) {
@@ -76,7 +76,7 @@ public class Ex2 {
 
         public String name;
 
-        @JsonCreator
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public static SinglePropertyEnumWithCreator of(@JsonProperty("theName") String name) {
             return TYPE1;
         }
@@ -99,7 +99,7 @@ public class Ex2 {
         public int id;
         public String name;
 
-        @JsonCreator
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public static MultiplePropertyEnumWithCreator of(
                 @JsonProperty("id") int id,
                 @JsonProperty("theName") String name) {
