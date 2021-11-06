@@ -1,8 +1,6 @@
 package com.example.demojackson.ex;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.AllArgsConstructor;
@@ -13,6 +11,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -115,5 +115,106 @@ public class Ex4 {
     public static class Money {
         @Getter
         public long money;
+    }
+
+    /*
+        for Serialize Only
+     */
+    @Test
+    public void whenSerializingUsingJacksonReferenceAnnotation_thenCorrect() throws Exception {
+        UserWithRef user = new UserWithRef(1, "John");
+        ItemWithRef item = new ItemWithRef(2, "book", user);
+        user.addItem(item);
+
+        String result = objectMapper.writeValueAsString(item);
+
+        log.info(result);
+
+        assertThat(result).contains("book");
+        assertThat(result).contains("John");
+        assertThat(result).doesNotContain("userItems");
+    }
+
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ItemWithRef {   // parent
+        public int id;
+        public String itemName;
+
+        @JsonManagedReference
+        public UserWithRef owner;
+    }
+
+    @NoArgsConstructor
+    public static class UserWithRef {   // child
+        public int id;
+        public String name;
+
+        public UserWithRef(int id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        @JsonBackReference
+        public List<ItemWithRef> userItems = new ArrayList<>();
+
+        public void addItem(ItemWithRef item) {
+            userItems.add(item);
+        }
+    }
+
+    @Test
+    public void whenSerializingUsingJsonIdentityInfo_thenCorrect() throws Exception {
+        UserWithIdentity user = new UserWithIdentity(1, "John");
+        ItemWithIdentity item = new ItemWithIdentity(2, "book", user);
+        user.addItem(item);
+
+        String result = objectMapper.writeValueAsString(item);
+
+        log.info(result);
+
+        assertThat(result).contains("book");
+        assertThat(result).contains("John");
+        assertThat(result).contains("userItems");
+
+        item = objectMapper.readerFor(ItemWithIdentity.class)
+                .readValue(result);
+
+        assertThat(item.getId()).isEqualTo(2);
+        assertThat(item.getOwner().getId()).isEqualTo(1);
+        assertThat(item).isSameAs(item.getOwner().getUserItems().get(0));
+    }
+
+    @Getter
+    @JsonIdentityInfo(
+            generator = ObjectIdGenerators.PropertyGenerator.class,
+            property = "id")
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ItemWithIdentity {
+        public int id;
+        public String itemName;
+        public UserWithIdentity owner;
+    }
+
+    @Getter
+    @JsonIdentityInfo(
+            generator = ObjectIdGenerators.PropertyGenerator.class,
+            property = "id")
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UserWithIdentity {
+        public int id;
+        public String name;
+        public List<ItemWithIdentity> userItems = new ArrayList<>();
+
+        public UserWithIdentity(int id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        public void addItem(ItemWithIdentity item) {
+            userItems.add(item);
+        }
     }
 }
